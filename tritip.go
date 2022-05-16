@@ -45,9 +45,41 @@ func getOrders() (data.OrderRecordOutputResp, error) {
 	return orders, err
 }
 
-func orderUpdate(o []*data.OrderRecordInput) {
+func firstFiveZip(zip string) string {
+	counter := 0
+	for i := range zip {
+		if counter == 5 {
+			zip = zip[:i]
+		}
+		counter++
+	}
+	fmt.Printf("zip: %v\n", zip)
+
+	return zip
+}
+
+func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutput, error) {
 	// Shipstation API Call
-	fmt.Printf("order update %v\n", o)
+	ssOrders, err := getOrders()
+	if err != nil {
+		log.Fatal(err)
+		fmt.Printf("couldn't get orders:: %v", err)
+	}
+	updatedOrders := []data.OrderRecordOutput{}
+	for _, order := range ssOrders.Orders {
+		thisOrder := order
+		for _, zip := range zips {
+			firstFive := firstFiveZip(thisOrder.ShipTo.PostalCode)
+			if firstFive == zip.PostalCode {
+				thisOrder.AdvancedOptions.CustomField3 = zip.CustomField3
+				updatedOrders = append(updatedOrders, thisOrder)
+			}
+		}
+	}
+
+	fmt.Printf("updated orders: %v\n", updatedOrders)
+
+	return updatedOrders, err
 }
 
 func csvReader(s string) ([]*data.OrderRecordInput, error) {
@@ -76,7 +108,7 @@ func initializeCSV() {
 		fmt.Println("Can't initialize reader ::", err)
 	}
 
-	orderUpdate(records)
+	iceProfileAssignment(records)
 
 }
 
@@ -84,5 +116,4 @@ func main() {
 
 	initializeCSV()
 
-	getOrders()
 }
