@@ -59,7 +59,7 @@ func firstFiveZip(zip string) string {
 }
 
 func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutput, error) {
-	// Shipstation API Call
+	// Adds Ice Profile to Orders
 	ssOrders, err := getOrders()
 	if err != nil {
 		log.Fatal(err)
