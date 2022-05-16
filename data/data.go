@@ -25,7 +25,7 @@ type BillTo struct {
 	Country         string
 	Phone           string
 	Residential     bool
-	AddressVerified bool
+	AddressVerified string
 }
 
 type ShipTo struct {
@@ -40,22 +40,76 @@ type ShipTo struct {
 	Country         string
 	Phone           string
 	Residential     bool
-	AddressVerified bool
+	AddressVerified string
 }
 
 type Weight struct {
+	Value int
+	Units string
+}
+
+type Options struct {
+	Name  string
+	Value string
 }
 
 type Dimensions struct {
+	Units  string
+	Length int
+	Width  int
+	Height int
+}
+
+type InsuranceOptions struct {
+	Provider       string
+	InsureShipment bool
+	InsuredValue   float64
 }
 
 type InternationalOptions struct {
+	Contents     string
+	CustomsItems string
+	NonDelivery  string
 }
 
 type AdvancedOptions struct {
+	WarehouseId       int
+	NonMachinable     bool
+	SaturdayDelivery  bool
+	ContainsAlcohol   bool
+	MergedOrSplit     bool
+	MergedIds         []string
+	ParentId          string
+	StoreId           int
+	CustomField1      string
+	CustomField2      string
+	CustomField3      string
+	Source            string
+	BillToParty       string
+	BillToAccount     string
+	BilltoPostalCode  string
+	BillToCountryCode string
 }
 
 type LineItem struct {
+	OrderItemId       int
+	LineItemKey       string
+	Sku               string
+	Name              string
+	ImageUrl          string
+	Weight            Weight
+	Quantity          int
+	UnitPrice         float64
+	TaxAmount         string
+	ShippingAmount    string
+	WarehouseLocation string
+	Options           []Options
+	ProductId         string
+	FulfillmentSku    string
+	Adjustment        bool
+	Upc               string
+	CreateDate        string
+	ModifyDate        string
 }
 
 type LineItemOptions struct {
@@ -64,18 +118,42 @@ type LineItemOptions struct {
 }
 
 type OrderRecordOutput struct {
-	OrderId          string
-	OrderNumber      string
-	OrderKey         string
-	OrderDate        string
-	CreateDate       string
-	ModifyDate       string
-	PaymentDate      string
-	ShipByDate       string
-	OrderStatus      string
-	CustomerId       string
-	CustomerUsername string
-	CustomerEmail    string
-	BillTo           BillTo
-	ShipTo           ShipTo
+	OrderId                  int
+	OrderNumber              string
+	OrderKey                 string
+	OrderDate                string
+	CreateDate               string
+	ModifyDate               string
+	PaymentDate              string
+	ShipByDate               string
+	OrderStatus              string
+	CustomerId               string
+	CustomerUsername         string
+	CustomerEmail            string
+	BillTo                   BillTo
+	ShipTo                   ShipTo
+	Items                    []LineItem
+	OrderTotal               float64
+	AmountPaid               float64
+	TaxAmount                float64
+	ShippingAmount           float64
+	CustomerNotes            string
+	InternalNotes            string
+	Gift                     bool
+	GiftMessage              string
+	PaymentMethod            string
+	RequestedShippingService string
+	CarrierCode              string
+	ServiceCode              string
+	Confirmation             string
+	ShipDate                 string
+	HoldUntilDate            string
+	Weight                   Weight
+	Dimensions               Dimensions
+	InsuranceOptions         InsuranceOptions
+	AdvancedOptions          AdvancedOptions
+	TagIds                   string
+	UserId                   string
+	ExternallyFulfilled      bool
+	ExternallFulfilledBy     string
 }
