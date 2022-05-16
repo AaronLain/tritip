@@ -13,6 +13,33 @@ import (
 	"github.com/gocarina/gocsv"
 )
 
+func getTags() {
+	client := &http.Client{}
+	key, secret := data.GetApiSecret()
+	req, err := http.NewRequest(http.MethodGet, "https://ssapi.shipstation.com/accounts/listtags", nil)
+	req.SetBasicAuth(key, secret)
+	tags := []data.Tag{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+		fmt.Printf("request error: %v\n", err)
+	}
+
+	respJSON, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("read i/o error ::\n", err)
+	}
+
+	err = json.Unmarshal([]byte(respJSON), &tags)
+	if err != nil {
+		fmt.Printf("json unmarshalling error :: %v\n", err)
+	}
+
+	fmt.Printf("tags: %v", tags)
+
+	defer resp.Body.Close()
+}
+
 func getOrders() (data.OrderRecordOutputResp, error) {
 	// get orders for update
 	client := &http.Client{}
@@ -68,6 +95,7 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 	updatedOrders := []data.OrderRecordOutput{}
 	for _, order := range ssOrders.Orders {
 		thisOrder := order
+		thisOrder.TagIds = append(thisOrder.TagIds, 122060)
 		for _, zip := range zips {
 			firstFive := firstFiveZip(thisOrder.ShipTo.PostalCode)
 			if firstFive == zip.PostalCode {
@@ -79,7 +107,7 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 
 	fmt.Printf("updated orders: %v\n", updatedOrders)
 
-	return updatedOrders, err
+	return updatedOrders, nil
 }
 
 func csvReader(s string) ([]*data.OrderRecordInput, error) {
@@ -95,10 +123,10 @@ func csvReader(s string) ([]*data.OrderRecordInput, error) {
 	}
 	defer recordFile.Close()
 
-	return records, err
+	return records, nil
 }
 
-func initializeCSV() {
+func initialize() {
 	localString := "./"
 	input := strings.Join(os.Args[1:], "")
 	fileName := localString + input
@@ -108,12 +136,18 @@ func initializeCSV() {
 		fmt.Println("Can't initialize reader ::", err)
 	}
 
-	iceProfileAssignment(records)
+	orders, err := iceProfileAssignment(records)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	getTags()
+	fmt.Printf("Orders: %v\n", orders)
 
 }
 
 func main() {
 
-	initializeCSV()
+	initialize()
 
 }
