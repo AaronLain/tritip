@@ -95,6 +95,7 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 	updatedOrders := []data.OrderRecordOutput{}
 	for _, order := range ssOrders.Orders {
 		thisOrder := order
+		// add the special API tag so we know the order was touched
 		thisOrder.TagIds = append(thisOrder.TagIds, 122060)
 		for _, zip := range zips {
 			firstFive := firstFiveZip(thisOrder.ShipTo.PostalCode)
