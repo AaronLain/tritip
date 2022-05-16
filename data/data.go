@@ -156,6 +156,6 @@ type OrderRecordOutput struct {
 	ExternallFulfilledBy     string
 }
 
-type ListResponse struct {
+type OrderRecordOutputResp struct {
 	Orders []OrderRecordOutput
 }

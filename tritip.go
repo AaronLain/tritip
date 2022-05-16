@@ -13,17 +13,15 @@ import (
 	"github.com/gocarina/gocsv"
 )
 
-func getOrders() (data.ListResponse, error) {
+func getOrders() (data.OrderRecordOutputResp, error) {
 	// get orders for update
 	client := &http.Client{}
-	orders := data.ListResponse{}
+	orders := data.OrderRecordOutputResp{}
 	key, secret := data.GetApiSecret()
 
 	req, err := http.NewRequest(http.MethodGet, "https://ssapi.shipstation.com/orders?orderStatus=awaiting_shipment", nil)
 
 	req.SetBasicAuth(key, secret)
-
-	fmt.Printf("req: %v\n", req)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -33,7 +31,7 @@ func getOrders() (data.ListResponse, error) {
 
 	respJSON, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("read i/o error ::", err)
+		fmt.Println("read i/o error ::\n", err)
 	}
 
 	err = json.Unmarshal([]byte(respJSON), &orders)
@@ -41,8 +39,6 @@ func getOrders() (data.ListResponse, error) {
 	if err != nil {
 		fmt.Printf("json unmarshalling error :: %v\n", err)
 	}
-
-	fmt.Printf("resp: %v", resp)
 
 	defer resp.Body.Close()
 
