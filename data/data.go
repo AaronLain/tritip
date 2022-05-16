@@ -1,16 +1,13 @@
 package data
 
 type OrderRecordInput struct {
-	OrderNum      string  `csv:"Order - Number"`
-	CustomField3  string  `csv:"CustomField3"`
-	AvgTemp       float64 `csv:"AvgTemp"`
-	City          string  `csv:"Ship To - City"`
-	State         string  `csv:"Ship To - State"`
-	PostalCode    string  `csv:"Ship To - Postal Code"`
-	CountryCode   string  `csv:"Shipping Country"`
-	ItemSKU       string  `csv:"Lineitem sku"`
-	ItemName      string  `csv:"Lineitem name"`
-	ItemUnitPrice string  `csv:"Lineitem price"`
+	OrderNum     string  `csv:"Order - Number"`
+	CustomField3 string  `csv:"CustomField3"`
+	AvgTemp      float64 `csv:"AvgTemp"`
+	City         string  `csv:"Ship To - City"`
+	State        string  `csv:"Ship To - State"`
+	PostalCode   string  `csv:"Ship To - Postal Code"`
+	CountryCode  string  `csv:"Shipping Country"`
 }
 
 type BillTo struct {
@@ -44,8 +41,9 @@ type ShipTo struct {
 }
 
 type Weight struct {
-	Value int
-	Units string
+	Value       float64
+	Units       string
+	WeightUnits float64
 }
 
 type Options struct {
@@ -55,9 +53,9 @@ type Options struct {
 
 type Dimensions struct {
 	Units  string
-	Length int
-	Width  int
-	Height int
+	Length float64
+	Width  float64
+	Height float64
 }
 
 type InsuranceOptions struct {
@@ -73,14 +71,14 @@ type InternationalOptions struct {
 }
 
 type AdvancedOptions struct {
-	WarehouseId       int
+	WarehouseId       float64
 	NonMachinable     bool
 	SaturdayDelivery  bool
 	ContainsAlcohol   bool
 	MergedOrSplit     bool
 	MergedIds         []string
 	ParentId          string
-	StoreId           int
+	StoreId           float64
 	CustomField1      string
 	CustomField2      string
 	CustomField3      string
@@ -92,19 +90,19 @@ type AdvancedOptions struct {
 }
 
 type LineItem struct {
-	OrderItemId       int
+	OrderItemId       float64
 	LineItemKey       string
 	Sku               string
 	Name              string
 	ImageUrl          string
 	Weight            Weight
-	Quantity          int
+	Quantity          float64
 	UnitPrice         float64
-	TaxAmount         string
-	ShippingAmount    string
+	TaxAmount         float64
+	ShippingAmount    float64
 	WarehouseLocation string
 	Options           []Options
-	ProductId         string
+	ProductId         float64
 	FulfillmentSku    string
 	Adjustment        bool
 	Upc               string
@@ -118,7 +116,7 @@ type LineItemOptions struct {
 }
 
 type OrderRecordOutput struct {
-	OrderId                  int
+	OrderId                  float64
 	OrderNumber              string
 	OrderKey                 string
 	OrderDate                string
@@ -127,7 +125,7 @@ type OrderRecordOutput struct {
 	PaymentDate              string
 	ShipByDate               string
 	OrderStatus              string
-	CustomerId               string
+	CustomerId               float64
 	CustomerUsername         string
 	CustomerEmail            string
 	BillTo                   BillTo
@@ -152,8 +150,12 @@ type OrderRecordOutput struct {
 	Dimensions               Dimensions
 	InsuranceOptions         InsuranceOptions
 	AdvancedOptions          AdvancedOptions
-	TagIds                   string
+	TagIds                   []float64
 	UserId                   string
 	ExternallyFulfilled      bool
 	ExternallFulfilledBy     string
+}
+
+type OrderRecordOutputResp struct {
+	Orders []OrderRecordOutput
 }
