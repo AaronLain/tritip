@@ -106,9 +106,27 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 		}
 	}
 
-	fmt.Printf("updated orders: %v\n", updatedOrders)
+	fmt.Printf("updated orders: %v\n length: %v", updatedOrders, len(updatedOrders))
 
 	return updatedOrders, nil
+}
+
+// func postOrders()
+
+func updateOrders(orders []data.OrderRecordOutput) error {
+	ordersQueue := []data.OrderRecordOutput{}
+	count := 0
+	for _, order := range orders {
+		count++
+		ordersQueue = append(ordersQueue, order)
+		if count <= 99 {
+			// update orders en masse
+
+			// reset count to zero
+			count = 0
+		}
+	}
+	return nil
 }
 
 func csvReader(s string) ([]*data.OrderRecordInput, error) {
@@ -142,7 +160,6 @@ func initialize() {
 		log.Fatal(err)
 	}
 
-	getTags()
 	fmt.Printf("Orders: %v\n", orders)
 
 }
