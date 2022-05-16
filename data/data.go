@@ -150,7 +150,7 @@ type OrderRecordOutput struct {
 	Dimensions               Dimensions
 	InsuranceOptions         InsuranceOptions
 	AdvancedOptions          AdvancedOptions
-	TagIds                   []float64
+	TagIds                   []int
 	UserId                   string
 	ExternallyFulfilled      bool
 	ExternallFulfilledBy     string
@@ -158,4 +158,10 @@ type OrderRecordOutput struct {
 
 type OrderRecordOutputResp struct {
 	Orders []OrderRecordOutput
+}
+
+type Tag struct {
+	TagId float64
+	Name  string
+	Color string
 }

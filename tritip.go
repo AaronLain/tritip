@@ -13,6 +13,33 @@ import (
 	"github.com/gocarina/gocsv"
 )
 
+func getTags() {
+	client := &http.Client{}
+	key, secret := data.GetApiSecret()
+	req, err := http.NewRequest(http.MethodGet, "https://ssapi.shipstation.com/accounts/listtags", nil)
+	req.SetBasicAuth(key, secret)
+	tags := []data.Tag{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+		fmt.Printf("request error: %v\n", err)
+	}
+
+	respJSON, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("read i/o error ::\n", err)
+	}
+
+	err = json.Unmarshal([]byte(respJSON), &tags)
+	if err != nil {
+		fmt.Printf("json unmarshalling error :: %v\n", err)
+	}
+
+	fmt.Printf("tags: %v", tags)
+
+	defer resp.Body.Close()
+}
+
 func getOrders() (data.OrderRecordOutputResp, error) {
 	// get orders for update
 	client := &http.Client{}
@@ -45,9 +72,43 @@ func getOrders() (data.OrderRecordOutputResp, error) {
 	return orders, err
 }
 
-func orderUpdate(o []*data.OrderRecordInput) {
-	// Shipstation API Call
-	fmt.Printf("order update %v\n", o)
+func firstFiveZip(zip string) string {
+	counter := 0
+	for i := range zip {
+		if counter == 5 {
+			zip = zip[:i]
+		}
+		counter++
+	}
+	fmt.Printf("zip: %v\n", zip)
+
+	return zip
+}
+
+func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutput, error) {
+	// Adds Ice Profile to Orders
+	ssOrders, err := getOrders()
+	if err != nil {
+		log.Fatal(err)
+		fmt.Printf("couldn't get orders:: %v", err)
+	}
+	updatedOrders := []data.OrderRecordOutput{}
+	for _, order := range ssOrders.Orders {
+		thisOrder := order
+		// add the special API tag so we know the order was touched
+		thisOrder.TagIds = append(thisOrder.TagIds, 122060)
+		for _, zip := range zips {
+			firstFive := firstFiveZip(thisOrder.ShipTo.PostalCode)
+			if firstFive == zip.PostalCode {
+				thisOrder.AdvancedOptions.CustomField3 = zip.CustomField3
+				updatedOrders = append(updatedOrders, thisOrder)
+			}
+		}
+	}
+
+	fmt.Printf("updated orders: %v\n", updatedOrders)
+
+	return updatedOrders, nil
 }
 
 func csvReader(s string) ([]*data.OrderRecordInput, error) {
@@ -63,10 +124,10 @@ func csvReader(s string) ([]*data.OrderRecordInput, error) {
 	}
 	defer recordFile.Close()
 
-	return records, err
+	return records, nil
 }
 
-func initializeCSV() {
+func initialize() {
 	localString := "./"
 	input := strings.Join(os.Args[1:], "")
 	fileName := localString + input
@@ -76,13 +137,18 @@ func initializeCSV() {
 		fmt.Println("Can't initialize reader ::", err)
 	}
 
-	orderUpdate(records)
+	orders, err := iceProfileAssignment(records)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	getTags()
+	fmt.Printf("Orders: %v\n", orders)
 
 }
 
 func main() {
 
-	initializeCSV()
+	initialize()
 
-	getOrders()
 }
