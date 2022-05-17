@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -22,7 +21,7 @@ func getTags() {
 	tags := []data.Tag{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+
 		fmt.Printf("request error: %v\n", err)
 	}
 
@@ -53,7 +52,7 @@ func getOrders() (data.OrderRecordOutputResp, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+
 		fmt.Printf("request error: %v\n", err)
 	}
 
@@ -63,7 +62,6 @@ func getOrders() (data.OrderRecordOutputResp, error) {
 	}
 
 	err = json.Unmarshal([]byte(respJSON), &orders)
-	fmt.Printf("orders: %v\n", orders)
 	if err != nil {
 		fmt.Printf("json unmarshalling error :: %v\n", err)
 	}
@@ -81,7 +79,6 @@ func firstFiveZip(zip string) string {
 		}
 		counter++
 	}
-	fmt.Printf("zip: %v\n", zip)
 
 	return zip
 }
@@ -90,7 +87,7 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 	// Adds Ice Profile to Orders
 	ssOrders, err := getOrders()
 	if err != nil {
-		log.Fatal(err)
+
 		fmt.Printf("couldn't get orders:: %v\n", err)
 	}
 	updatedOrders := []data.OrderRecordOutput{}
@@ -109,7 +106,7 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 		}
 	}
 
-	fmt.Printf("updated orders: %v\n length: %v\n", updatedOrders, len(updatedOrders))
+	// fmt.Printf("updated orders: %v\n length: %v\n", updatedOrders, len(updatedOrders))
 
 	return updatedOrders, nil
 }
@@ -118,7 +115,6 @@ func postOrders(ordersQueue []data.OrderRecordOutput) (int, error) {
 	client := &http.Client{}
 	orders, err := json.Marshal(ordersQueue)
 	if err != nil {
-		log.Fatal(err)
 		fmt.Printf("json marshal error: %v\n", err)
 	}
 	key, secret := data.GetApiSecret()
@@ -126,24 +122,12 @@ func postOrders(ordersQueue []data.OrderRecordOutput) (int, error) {
 	req, err := http.NewRequest(http.MethodPost, "https://ssapi.shipstation.com/orders/createorders", bytes.NewBuffer(orders))
 
 	req.SetBasicAuth(key, secret)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+
 		fmt.Printf("request error: %v\n", err)
-	}
-
-	respJSON, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-		fmt.Println("read i/o error ::\n", err)
-	}
-
-	err = json.Unmarshal([]byte(respJSON), &orders)
-	fmt.Printf("orders: %v\n", orders)
-	if err != nil {
-		log.Fatal(err)
-		fmt.Printf("json unmarshalling error :: %v\n", err)
 	}
 
 	defer resp.Body.Close()
@@ -151,7 +135,7 @@ func postOrders(ordersQueue []data.OrderRecordOutput) (int, error) {
 	if resp.StatusCode == http.StatusCreated {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatal(err)
+
 			fmt.Printf("failed to read response: %v\n", err)
 		}
 
@@ -161,7 +145,14 @@ func postOrders(ordersQueue []data.OrderRecordOutput) (int, error) {
 		return 201, nil
 
 	} else {
-		fmt.Printf("Wrong status code received: %v\n", resp.Status)
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+
+			fmt.Printf("failed to read response: %v\n", err)
+		}
+
+		jsonStr := string(body)
+		fmt.Printf("Response: %v\n", jsonStr)
 
 		return resp.StatusCode, err
 	}
@@ -170,16 +161,16 @@ func postOrders(ordersQueue []data.OrderRecordOutput) (int, error) {
 
 func updateOrders(orders []data.OrderRecordOutput) error {
 	ordersQueue := []data.OrderRecordOutput{}
-	for _, order := range orders {
+	for i, order := range orders {
 		orderCount := 0
 		ordersQueue = append(ordersQueue, order)
 		fmt.Printf("count: %v\n", orderCount)
 		// API limit is 100 orders
-		if orderCount == 99 || len(ordersQueue) <= 99 {
+		if orderCount == 99 || i == len(ordersQueue)-1 {
 			// update orders en masse
 			status, err := postOrders(ordersQueue)
 			if err != nil {
-				log.Fatal(err)
+
 				fmt.Printf("failed to post Orders: %v\n", err)
 				fmt.Printf("recieved status code: %v\n", status)
 			}
@@ -192,7 +183,7 @@ func updateOrders(orders []data.OrderRecordOutput) error {
 func csvReader(s string) ([]*data.OrderRecordInput, error) {
 	recordFile, err := os.Open(s)
 	if err != nil {
-		log.Fatal(err)
+
 		fmt.Println("Reader Error occured! ::", err)
 	}
 
@@ -213,22 +204,20 @@ func initialize() {
 
 	records, err := csvReader(fileName)
 	if err != nil {
-		log.Fatal(err)
+
 		fmt.Println("Can't initialize reader ::", err)
 	}
 
 	orders, err := iceProfileAssignment(records)
 	if err != nil {
-		log.Fatal(err)
+
 		fmt.Printf("Can't assign ice profiles:: %v\n", err)
 	}
 
 	if err := updateOrders(orders); err != nil {
-		log.Fatal(err)
+
 		fmt.Printf("Update Failed:: %v\n", err)
 	}
-
-	fmt.Printf("Orders: %v\n", orders)
 
 }
 

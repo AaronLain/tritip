@@ -11,149 +11,152 @@ type OrderRecordInput struct {
 }
 
 type BillTo struct {
-	Name            string
-	Company         string
-	Street1         string
-	Street2         string
-	Street3         string
-	City            string
-	State           string
-	PostalCode      string
-	Country         string
-	Phone           string
-	Residential     bool
-	AddressVerified string
+	Name            string `json:"name"`
+	Company         string `json:"company"`
+	Street1         string `json:"street1"`
+	Street2         string `json:"street2"`
+	Street3         string `json:"street3"`
+	City            string `json:"city"`
+	State           string `json:"state"`
+	PostalCode      string `json:"postalCode"`
+	Country         string `json:"country"`
+	Phone           string `json:"phone"`
+	Residential     bool   `json:"residential"`
+	AddressVerified string `json:"addressVerified"`
 }
 
 type ShipTo struct {
-	Name            string
-	Company         string
-	Street1         string
-	Street2         string
-	Street3         string
-	City            string
-	State           string
-	PostalCode      string
-	Country         string
-	Phone           string
-	Residential     bool
-	AddressVerified string
+	Name            string `json:"name"`
+	Company         string `json:"company"`
+	Street1         string `json:"street1"`
+	Street2         string `json:"street2"`
+	Street3         string `json:"street3"`
+	City            string `json:"city"`
+	State           string `json:"state"`
+	PostalCode      string `json:"postalCode"`
+	Country         string `json:"country"`
+	Phone           string `json:"phone"`
+	Residential     bool   `json:"residential"`
+	AddressVerified string `json:"addressVerified"`
 }
 
 type Weight struct {
-	Value       float64
-	Units       string
-	WeightUnits float64
+	Value       float64 `json:"value"`
+	Units       string  `json:"units"`
+	WeightUnits float64 `json:"WeightUnits"`
 }
 
 type Options struct {
-	Name  string
-	Value string
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type Dimensions struct {
-	Units  string
-	Length float64
-	Width  float64
-	Height float64
+	Length float64 `json:"length"`
+	Width  float64 `json:"width"`
+	Height float64 `json:"height"`
+	Units  string  `json:"units"`
 }
 
 type InsuranceOptions struct {
-	Provider       string
-	InsureShipment bool
-	InsuredValue   float64
+	Provider       string  `json:"provider"`
+	InsureShipment bool    `json:"insureShipment"`
+	InsuredValue   float64 `json:"insuredValue"`
 }
 
 type InternationalOptions struct {
-	Contents     string
-	CustomsItems string
-	NonDelivery  string
+	Contents     string `json:"contents"`
+	CustomsItems string `json:"customsItems"`
+	NonDelivery  string `json:"nonDelivery"`
 }
 
 type AdvancedOptions struct {
-	WarehouseId       float64
-	NonMachinable     bool
-	SaturdayDelivery  bool
-	ContainsAlcohol   bool
-	MergedOrSplit     bool
-	MergedIds         []string
-	ParentId          string
-	StoreId           float64
-	CustomField1      string
-	CustomField2      string
-	CustomField3      string
-	Source            string
-	BillToParty       string
-	BillToAccount     string
-	BilltoPostalCode  string
-	BillToCountryCode string
+	WarehouseId          float64  `json:"warehouseId"`
+	NonMachinable        bool     `json:"nonMachinable"`
+	SaturdayDelivery     bool     `json:"saturdayDelivery"`
+	ContainsAlcohol      bool     `json:"containsAlcohol"`
+	StoreId              int      `json:"storeId"`
+	CustomField1         string   `json:"customField1"`
+	CustomField2         string   `json:"customField2"`
+	CustomField3         string   `json:"customField3"`
+	Source               string   `json:"source"`
+	MergedOrSplit        bool     `json:"mergedOrSplit"`
+	MergedIds            []string `json:"mergedIds"`
+	ParentId             string   `json:"parentId"`
+	BillToParty          string   `json:"billToParty"`
+	BillToAccount        string   `json:"billToAccount"`
+	BilltoPostalCode     string   `json:"billToPostalCode"`
+	BillToCountryCode    string   `json:"billToCountryCode"`
+	BillToMyOtherAccount string   `json:"billToMyOtherAccount"`
 }
 
 type LineItem struct {
-	OrderItemId       float64
-	LineItemKey       string
-	Sku               string
-	Name              string
-	ImageUrl          string
-	Weight            Weight
-	Quantity          float64
-	UnitPrice         float64
-	TaxAmount         float64
-	ShippingAmount    float64
-	WarehouseLocation string
-	Options           []Options
-	ProductId         float64
-	FulfillmentSku    string
-	Adjustment        bool
-	Upc               string
-	CreateDate        string
-	ModifyDate        string
+	OrderItemId       float64   `json:"orderItemId"`
+	LineItemKey       string    `json:"lineItemKey"`
+	Sku               string    `json:"sku"`
+	Name              string    `json:"name"`
+	ImageUrl          string    `json:"imageUrl"`
+	Weight            Weight    `json:"weight"`
+	Quantity          float64   `json:"quantity"`
+	UnitPrice         float64   `json:"unitPrice"`
+	TaxAmount         float64   `json:"taxAmount"`
+	ShippingAmount    float64   `json:"shippingAmount"`
+	WarehouseLocation string    `json:"warehouseLocation"`
+	Options           []Options `json:"options"`
+	ProductId         float64   `json:"productId"`
+	FulfillmentSku    string    `json:"fulfillmentSku"`
+	Adjustment        bool      `json:"adjustment"`
+	Upc               string    `json:"upc"`
+	CreateDate        string    `json:"createDate"`
+	ModifyDate        string    `json:"modifyDate"`
 }
 
 type LineItemOptions struct {
-	Name  string
-	Value string
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type OrderRecordOutput struct {
-	OrderId                  float64
-	OrderNumber              string
-	OrderKey                 string
-	OrderDate                string
-	CreateDate               string
-	ModifyDate               string
-	PaymentDate              string
-	ShipByDate               string
-	OrderStatus              string
-	CustomerId               float64
-	CustomerUsername         string
-	CustomerEmail            string
-	BillTo                   BillTo
-	ShipTo                   ShipTo
-	Items                    []LineItem
-	OrderTotal               float64
-	AmountPaid               float64
-	TaxAmount                float64
-	ShippingAmount           float64
-	CustomerNotes            string
-	InternalNotes            string
-	Gift                     bool
-	GiftMessage              string
-	PaymentMethod            string
-	RequestedShippingService string
-	CarrierCode              string
-	ServiceCode              string
-	Confirmation             string
-	ShipDate                 string
-	HoldUntilDate            string
-	Weight                   Weight
-	Dimensions               Dimensions
-	InsuranceOptions         InsuranceOptions
-	AdvancedOptions          AdvancedOptions
-	TagIds                   []int
-	UserId                   string
-	ExternallyFulfilled      bool
-	ExternallFulfilledBy     string
+	OrderId                  float64              `json:"orderId"`
+	OrderNumber              string               `json:"orderNumber"`
+	OrderKey                 string               `json:"orderKey"`
+	OrderDate                string               `json:"orderDate"`
+	CreateDate               string               `json:"createDate"`
+	ModifyDate               string               `json:"modifyDate"`
+	ShipByDate               string               `json:"paymentDate"`
+	PaymentDate              string               `json:"shipByDate"`
+	OrderStatus              string               `json:"orderStatus"`
+	CustomerId               float64              `json:"customerId"`
+	CustomerUsername         string               `json:"customerUsername"`
+	CustomerEmail            string               `json:"customerEmail"`
+	BillTo                   BillTo               `json:"billTo"`
+	ShipTo                   ShipTo               `json:"shipTo"`
+	Items                    []LineItem           `json:"items"`
+	OrderTotal               float64              `json:"orderTotal"`
+	AmountPaid               float64              `json:"amountPaid"`
+	TaxAmount                float64              `json:"taxAmount"`
+	ShippingAmount           float64              `json:"shippingAmount"`
+	CustomerNotes            string               `json:"customerNotes"`
+	InternalNotes            string               `json:"internalNotes"`
+	Gift                     bool                 `json:"gift"`
+	GiftMessage              string               `json:"giftMessage"`
+	PaymentMethod            string               `json:"paymentMethod"`
+	RequestedShippingService string               `json:"requestedShippingService"`
+	CarrierCode              string               `json:"carrierCode"`
+	ServiceCode              string               `json:"serviceCode"`
+	Confirmation             string               `json:"confirmation"`
+	PackageCode              string               `json:"packageCode"`
+	ShipDate                 string               `json:"shipDate"`
+	HoldUntilDate            string               `json:"holdUntilDate"`
+	Weight                   Weight               `json:"weight"`
+	Dimensions               Dimensions           `json:"dimensions"`
+	InsuranceOptions         InsuranceOptions     `json:"insuranceOptions"`
+	InternationalOptions     InternationalOptions `json:"internationalOptions"`
+	AdvancedOptions          AdvancedOptions      `json:"advancedOptions"`
+	TagIds                   []int                `json:"tagIds"`
+	UserId                   string               `json:"userId"`
+	ExternallyFulfilled      bool                 `json:"externallyFulfilled"`
+	ExternallFulfilledBy     string               `json:"externallyFulfilledBy"`
 }
 
 type OrderRecordOutputResp struct {
@@ -161,7 +164,6 @@ type OrderRecordOutputResp struct {
 }
 
 type Tag struct {
-	TagId float64
-	Name  string
-	Color string
+	TagId float64 `json:"tagId"`
+	Name  string  `json:"name"`
 }
