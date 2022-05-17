@@ -2,6 +2,7 @@ package main
 
 import (
 	data "ajl/tritip/data"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -97,9 +98,12 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 		thisOrder := order
 		// add the special API tag so we know the order was touched
 		thisOrder.TagIds = append(thisOrder.TagIds, 122060)
+		// make sure the order is in the queue when it updates
+		thisOrder.OrderStatus = "awaiting_shipment"
 		for _, zip := range zips {
 			firstFive := firstFiveZip(thisOrder.ShipTo.PostalCode)
 			if firstFive == zip.PostalCode {
+				// assign ice profile
 				thisOrder.AdvancedOptions.CustomField3 = zip.CustomField3
 				updatedOrders = append(updatedOrders, thisOrder)
 			}
@@ -111,19 +115,51 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 	return updatedOrders, nil
 }
 
-// func postOrders()
+func postOrders(ordersQueue []data.OrderRecordOutput) error {
+	client := &http.Client{}
+	orders, err := json.Marshal(ordersQueue)
+	if err != nil {
+		log.Fatal(err)
+		fmt.Printf("json marshal error: %v\n", err)
+	}
+	key, secret := data.GetApiSecret()
+
+	req, err := http.NewRequest(http.MethodPost, "https://ssapi.shipstation.com/orders/createorders", bytes.NewBuffer(orders))
+
+	req.SetBasicAuth(key, secret)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+		fmt.Printf("request error: %v\n", err)
+	}
+
+	respJSON, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("read i/o error ::\n", err)
+	}
+
+	err = json.Unmarshal([]byte(respJSON), &orders)
+	fmt.Printf("orders: %v\n", orders)
+	if err != nil {
+		fmt.Printf("json unmarshalling error :: %v\n", err)
+	}
+
+	defer resp.Body.Close()
+
+	return nil
+}
 
 func updateOrders(orders []data.OrderRecordOutput) error {
 	ordersQueue := []data.OrderRecordOutput{}
-	count := 0
 	for _, order := range orders {
-		count++
+		orderCount := 0
 		ordersQueue = append(ordersQueue, order)
-		if count <= 99 {
+		fmt.Printf("count: %v\n", orderCount)
+		if orderCount == 99 || len(ordersQueue) <= 99 {
 			// update orders en masse
-
-			// reset count to zero
-			count = 0
+			postOrders(ordersQueue)
+			orderCount = 0
 		}
 	}
 	return nil
