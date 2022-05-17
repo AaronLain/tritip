@@ -1,3 +1,4 @@
 api.go
 *.csv
+.DS_Store
 tritip
