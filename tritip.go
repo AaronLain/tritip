@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gocarina/gocsv"
 )
@@ -87,23 +88,30 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 	// Adds Ice Profile to Orders
 	ssOrders, err := getOrders()
 	if err != nil {
-
 		fmt.Printf("couldn't get orders:: %v\n", err)
 	}
+
 	updatedOrders := []data.OrderRecordOutput{}
+
 	for _, thisOrder := range ssOrders.Orders {
-		// add the special API tag so we know the order was touched
-		thisOrder.TagIds = append(thisOrder.TagIds, 122060)
 		// make sure the order is in the queue when it updates
 		thisOrder.OrderStatus = "awaiting_shipment"
+
 		for _, zip := range zips {
 			firstFive := firstFiveZip(thisOrder.ShipTo.PostalCode)
 			if firstFive == zip.PostalCode {
 				// assign ice profile
 				thisOrder.AdvancedOptions.CustomField3 = zip.CustomField3
+				if zip.CustomField3 == "Profile 5" {
+					thisOrder.ServiceCode = "ups_next_day_air_saver"
+					thisOrder.AdvancedOptions.CustomField3 = "Profile 4"
+				}
+				// add the special API tag so we know the order was touched
+				thisOrder.TagIds = append(thisOrder.TagIds, 122060)
 				updatedOrders = append(updatedOrders, thisOrder)
 			}
 		}
+
 	}
 
 	// fmt.Printf("updated orders: %v\n length: %v\n", updatedOrders, len(updatedOrders))
@@ -111,7 +119,7 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 	return updatedOrders, nil
 }
 
-func postOrders(ordersQueue []data.OrderRecordOutput) (int, error) {
+func postOrders(ordersQueue data.OrderRecordOutput) (int, error) {
 	client := &http.Client{}
 	orders, err := json.Marshal(ordersQueue)
 	if err != nil {
@@ -119,7 +127,7 @@ func postOrders(ordersQueue []data.OrderRecordOutput) (int, error) {
 	}
 	key, secret := data.GetApiSecret()
 
-	req, err := http.NewRequest(http.MethodPost, "https://ssapi.shipstation.com/orders/createorders", bytes.NewBuffer(orders))
+	req, err := http.NewRequest(http.MethodPost, "https://ssapi.shipstation.com/orders/createorder", bytes.NewBuffer(orders))
 
 	req.SetBasicAuth(key, secret)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -144,39 +152,41 @@ func postOrders(ordersQueue []data.OrderRecordOutput) (int, error) {
 
 		return 201, nil
 
+	} else if resp.StatusCode == 429 {
+		time.Sleep(50 * time.Second)
+		fmt.Println("API Rate limit exceeded, sleeping...")
+		return resp.StatusCode, err
 	} else {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-
-			fmt.Printf("failed to read response: %v\n", err)
-		}
-
-		jsonStr := string(body)
-		fmt.Printf("Response: %v\n", jsonStr)
+		fmt.Printf("Response Code: %v\n", resp.StatusCode)
 
 		return resp.StatusCode, err
 	}
+}
 
+func contains(s []int, e int) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func sleepAlert() {
+	time.Sleep(1510 * time.Millisecond)
+	fmt.Println("Sleeping...")
 }
 
 func updateOrders(orders []data.OrderRecordOutput) error {
-	ordersQueue := []data.OrderRecordOutput{}
-	for i, order := range orders {
-		orderCount := 0
-		ordersQueue = append(ordersQueue, order)
-		fmt.Printf("count: %v\n", orderCount)
-		// API limit is 100 orders
-		if orderCount == 99 || i == len(ordersQueue)-1 {
-			// update orders en masse
-			status, err := postOrders(ordersQueue)
-			if err != nil {
-
-				fmt.Printf("failed to post Orders: %v\n", err)
-				fmt.Printf("recieved status code: %v\n", status)
-			}
-			orderCount = 0
+	for _, order := range orders {
+		sleepAlert()
+		status, err := postOrders(order)
+		if err != nil {
+			fmt.Printf("failed to post Orders: %v\n", err)
+			fmt.Printf("recieved status code: %v\n", status)
 		}
 	}
+
 	return nil
 }
 
