@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gocarina/gocsv"
 )
@@ -22,7 +22,7 @@ func getTags() {
 	tags := []data.Tag{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+
 		fmt.Printf("request error: %v\n", err)
 	}
 
@@ -36,7 +36,7 @@ func getTags() {
 		fmt.Printf("json unmarshalling error :: %v\n", err)
 	}
 
-	fmt.Printf("tags: %v", tags)
+	fmt.Printf("tags: %v\n", tags)
 
 	defer resp.Body.Close()
 }
@@ -47,13 +47,13 @@ func getOrders() (data.OrderRecordOutputResp, error) {
 	orders := data.OrderRecordOutputResp{}
 	key, secret := data.GetApiSecret()
 
-	req, err := http.NewRequest(http.MethodGet, "https://ssapi.shipstation.com/orders?orderStatus=awaiting_shipment", nil)
+	req, err := http.NewRequest(http.MethodGet, "https://ssapi.shipstation.com/orders?orderStatus=awaiting_shipment&pageSize=500", nil)
 
 	req.SetBasicAuth(key, secret)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+
 		fmt.Printf("request error: %v\n", err)
 	}
 
@@ -63,14 +63,13 @@ func getOrders() (data.OrderRecordOutputResp, error) {
 	}
 
 	err = json.Unmarshal([]byte(respJSON), &orders)
-	fmt.Printf("orders: %v\n", orders)
 	if err != nil {
 		fmt.Printf("json unmarshalling error :: %v\n", err)
 	}
 
 	defer resp.Body.Close()
 
-	return orders, err
+	return orders, nil
 }
 
 func firstFiveZip(zip string) string {
@@ -81,7 +80,6 @@ func firstFiveZip(zip string) string {
 		}
 		counter++
 	}
-	fmt.Printf("zip: %v\n", zip)
 
 	return zip
 }
@@ -90,14 +88,14 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 	// Adds Ice Profile to Orders
 	ssOrders, err := getOrders()
 	if err != nil {
-		log.Fatal(err)
-		fmt.Printf("couldn't get orders:: %v", err)
+		fmt.Printf("couldn't get orders:: %v\n", err)
 	}
+
+	fmt.Println("number of orders (ice profile): ", len(ssOrders.Orders))
+
 	updatedOrders := []data.OrderRecordOutput{}
-	for _, order := range ssOrders.Orders {
-		thisOrder := order
-		// add the special API tag so we know the order was touched
-		thisOrder.TagIds = append(thisOrder.TagIds, 122060)
+
+	for _, thisOrder := range ssOrders.Orders {
 		// make sure the order is in the queue when it updates
 		thisOrder.OrderStatus = "awaiting_shipment"
 		for _, zip := range zips {
@@ -105,69 +103,92 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 			if firstFive == zip.PostalCode {
 				// assign ice profile
 				thisOrder.AdvancedOptions.CustomField3 = zip.CustomField3
+				if zip.CustomField3 == "Profile 5" {
+					thisOrder.ServiceCode = "ups_next_day_air_saver"
+					thisOrder.AdvancedOptions.CustomField3 = "Profile 4"
+				}
+				// add the special API tag so we know the order was touched
+				thisOrder.TagIds = append(thisOrder.TagIds, 122060)
 				updatedOrders = append(updatedOrders, thisOrder)
 			}
 		}
+
 	}
 
-	fmt.Printf("updated orders: %v\n length: %v", updatedOrders, len(updatedOrders))
+	// fmt.Printf("updated orders: %v\n length: %v\n", updatedOrders, len(updatedOrders))
 
 	return updatedOrders, nil
 }
 
-func postOrders(ordersQueue []data.OrderRecordOutput) error {
+func postOrders(order data.OrderRecordOutput) (int, error) {
 	client := &http.Client{}
-	orders, err := json.Marshal(ordersQueue)
+	orders, err := json.Marshal(order)
 	if err != nil {
-		log.Fatal(err)
 		fmt.Printf("json marshal error: %v\n", err)
 	}
 	key, secret := data.GetApiSecret()
 
-	req, err := http.NewRequest(http.MethodPost, "https://ssapi.shipstation.com/orders/createorders", bytes.NewBuffer(orders))
+	req, err := http.NewRequest(http.MethodPost, "https://ssapi.shipstation.com/orders/createorder", bytes.NewBuffer(orders))
 
 	req.SetBasicAuth(key, secret)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+
 		fmt.Printf("request error: %v\n", err)
-	}
-
-	respJSON, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("read i/o error ::\n", err)
-	}
-
-	err = json.Unmarshal([]byte(respJSON), &orders)
-	fmt.Printf("orders: %v\n", orders)
-	if err != nil {
-		fmt.Printf("json unmarshalling error :: %v\n", err)
 	}
 
 	defer resp.Body.Close()
 
-	return nil
+	if resp.StatusCode == 200 {
+
+		return 200, nil
+
+	} else if resp.StatusCode == 429 {
+		time.Sleep(50 * time.Second)
+		fmt.Println("API Rate limit exceeded, sleeping...")
+		return resp.StatusCode, err
+	} else {
+		fmt.Printf("Response Code: %v\n err: %v", resp.StatusCode, err)
+
+		return resp.StatusCode, err
+	}
+}
+
+func contains(s []int, e int) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func sleepAlert() {
+	time.Sleep(1510 * time.Millisecond)
+	fmt.Println("Sleeping...")
 }
 
 func updateOrders(orders []data.OrderRecordOutput) error {
-	ordersQueue := []data.OrderRecordOutput{}
+	fmt.Println("number of orders: ", len(orders))
 	for _, order := range orders {
-		orderCount := 0
-		ordersQueue = append(ordersQueue, order)
-		fmt.Printf("count: %v\n", orderCount)
-		if orderCount == 99 || len(ordersQueue) <= 99 {
-			// update orders en masse
-			postOrders(ordersQueue)
-			orderCount = 0
+		sleepAlert()
+
+		status, err := postOrders(order)
+		if err != nil {
+			fmt.Printf("failed to post Orders: %v\n", err)
+			fmt.Printf("recieved status code: %v\n", status)
 		}
 	}
+
 	return nil
 }
 
 func csvReader(s string) ([]*data.OrderRecordInput, error) {
 	recordFile, err := os.Open(s)
 	if err != nil {
+
 		fmt.Println("Reader Error occured! ::", err)
 	}
 
@@ -188,15 +209,17 @@ func initialize() {
 
 	records, err := csvReader(fileName)
 	if err != nil {
+
 		fmt.Println("Can't initialize reader ::", err)
 	}
 
 	orders, err := iceProfileAssignment(records)
 	if err != nil {
-		log.Fatal(err)
+
+		fmt.Printf("Can't assign ice profiles:: %v\n", err)
 	}
 
-	fmt.Printf("Orders: %v\n", orders)
+	defer updateOrders(orders)
 
 }
 
