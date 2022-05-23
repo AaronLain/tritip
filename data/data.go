@@ -71,23 +71,22 @@ type InternationalOptions struct {
 }
 
 type AdvancedOptions struct {
-	WarehouseId          float64  `json:"warehouseId"`
-	NonMachinable        bool     `json:"nonMachinable"`
-	SaturdayDelivery     bool     `json:"saturdayDelivery"`
-	ContainsAlcohol      bool     `json:"containsAlcohol"`
-	StoreId              int      `json:"storeId"`
-	CustomField1         string   `json:"customField1"`
-	CustomField2         string   `json:"customField2"`
-	CustomField3         string   `json:"customField3"`
-	Source               string   `json:"source"`
-	MergedOrSplit        bool     `json:"mergedOrSplit"`
-	MergedIds            []string `json:"mergedIds"`
-	ParentId             string   `json:"parentId"`
-	BillToParty          string   `json:"billToParty"`
-	BillToAccount        string   `json:"billToAccount"`
-	BilltoPostalCode     string   `json:"billToPostalCode"`
-	BillToCountryCode    string   `json:"billToCountryCode"`
-	BillToMyOtherAccount string   `json:"billToMyOtherAccount"`
+	WarehouseId       float64  `json:"warehouseId"`
+	NonMachinable     bool     `json:"nonMachinable"`
+	SaturdayDelivery  bool     `json:"saturdayDelivery"`
+	ContainsAlcohol   bool     `json:"containsAlcohol"`
+	StoreId           int      `json:"storeId"`
+	CustomField1      string   `json:"customField1"`
+	CustomField2      string   `json:"customField2"`
+	CustomField3      string   `json:"customField3"`
+	Source            string   `json:"source"`
+	MergedOrSplit     bool     `json:"mergedOrSplit"`
+	MergedIds         []string `json:"mergedIds"`
+	ParentId          string   `json:"parentId"`
+	BillToParty       string   `json:"billToParty"`
+	BillToAccount     string   `json:"billToAccount"`
+	BilltoPostalCode  string   `json:"billToPostalCode"`
+	BillToCountryCode string   `json:"billToCountryCode"`
 }
 
 type LineItem struct {

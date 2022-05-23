@@ -47,7 +47,7 @@ func getOrders() (data.OrderRecordOutputResp, error) {
 	orders := data.OrderRecordOutputResp{}
 	key, secret := data.GetApiSecret()
 
-	req, err := http.NewRequest(http.MethodGet, "https://ssapi.shipstation.com/orders?orderStatus=awaiting_shipment", nil)
+	req, err := http.NewRequest(http.MethodGet, "https://ssapi.shipstation.com/orders?orderStatus=awaiting_shipment&pageSize=500", nil)
 
 	req.SetBasicAuth(key, secret)
 
@@ -91,12 +91,13 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 		fmt.Printf("couldn't get orders:: %v\n", err)
 	}
 
+	fmt.Println("number of orders (ice profile): ", len(ssOrders.Orders))
+
 	updatedOrders := []data.OrderRecordOutput{}
 
 	for _, thisOrder := range ssOrders.Orders {
 		// make sure the order is in the queue when it updates
 		thisOrder.OrderStatus = "awaiting_shipment"
-
 		for _, zip := range zips {
 			firstFive := firstFiveZip(thisOrder.ShipTo.PostalCode)
 			if firstFive == zip.PostalCode {
@@ -119,9 +120,9 @@ func iceProfileAssignment(zips []*data.OrderRecordInput) ([]data.OrderRecordOutp
 	return updatedOrders, nil
 }
 
-func postOrders(ordersQueue data.OrderRecordOutput) (int, error) {
+func postOrders(order data.OrderRecordOutput) (int, error) {
 	client := &http.Client{}
-	orders, err := json.Marshal(ordersQueue)
+	orders, err := json.Marshal(order)
 	if err != nil {
 		fmt.Printf("json marshal error: %v\n", err)
 	}
@@ -140,24 +141,16 @@ func postOrders(ordersQueue data.OrderRecordOutput) (int, error) {
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusCreated {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
+	if resp.StatusCode == 200 {
 
-			fmt.Printf("failed to read response: %v\n", err)
-		}
-
-		jsonStr := string(body)
-		fmt.Printf("Response: %v\n", jsonStr)
-
-		return 201, nil
+		return 200, nil
 
 	} else if resp.StatusCode == 429 {
 		time.Sleep(50 * time.Second)
 		fmt.Println("API Rate limit exceeded, sleeping...")
 		return resp.StatusCode, err
 	} else {
-		fmt.Printf("Response Code: %v\n", resp.StatusCode)
+		fmt.Printf("Response Code: %v\n err: %v", resp.StatusCode, err)
 
 		return resp.StatusCode, err
 	}
@@ -178,8 +171,10 @@ func sleepAlert() {
 }
 
 func updateOrders(orders []data.OrderRecordOutput) error {
+	fmt.Println("number of orders: ", len(orders))
 	for _, order := range orders {
 		sleepAlert()
+
 		status, err := postOrders(order)
 		if err != nil {
 			fmt.Printf("failed to post Orders: %v\n", err)
@@ -224,10 +219,7 @@ func initialize() {
 		fmt.Printf("Can't assign ice profiles:: %v\n", err)
 	}
 
-	if err := updateOrders(orders); err != nil {
-
-		fmt.Printf("Update Failed:: %v\n", err)
-	}
+	defer updateOrders(orders)
 
 }
 
